@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
     <title>tj-unicom-iptv</title>
     <link rel="icon" href="data:,">
     <style>
@@ -28,11 +29,11 @@
     </style>
     <script type="application/javascript" src="jquery.min.js"></script>
     <script type="application/javascript">
-        let udpxy, state, videoHeight, xmlDoc, channleArr, programme;
+        let udpxy, state, videoHeight, xmlDoc;
+        udpxy = 'http://192.168.6.1:5002/udp/';
         $(function () {
-            programme = [];
-            channleArr = [];
-            $.get('epg.xml?t='+Date.now(), function(xml){
+            $('#udpxy').val(udpxy);
+            $.get('epg.xml?t=' + Date.now(), function (xml) {
                 xmlDoc = xml;
                 reload();
             });
@@ -49,15 +50,11 @@
                 videoHeight.push($(this).val())
             });
             $('#main').empty();
-
             let now = Date.now();
             let d = new Date(now);
-            let hi = d.getHours().toString()+d.getMinutes().toString();
+            let hi = d.getHours().toString() + d.getMinutes().toString();
             hi = ~~hi;
-            console.log(hi);
-
-
-            $.getJSON("iptv.json?t="+now, function (data) {
+            $.getJSON("iptv.json?t=" + now, function (data) {
                 let tmp = [];
                 $.each(data, function (key, value) {
                     let obj = {};
@@ -78,6 +75,7 @@
                     return b.state - a.state;
                 })
                 */
+                let m3u = "#EXTM3U\r\n";
                 $.each(tmp, function (index, value) {
                     let id = value['id'];
                     if ($.inArray(data[id]['state'], state) === -1) {
@@ -90,12 +88,17 @@
                     if (data[id]['state'] === '1') {
                         s = ' checked="checked"';
                         h = '';
+                        m3u += '#EXTINF:-1 ';
+                        if(data[id]['tvg-name'] !== ''){
+                            m3u += 'tvg-id="'+data[id]['tvg-name']+'" tvg-name="'+data[id]['tvg-name']+'" ';
+                        }
+                        m3u += 'group-title="'+data[id]['group-title']+'",'+data[id]['title']+"\r\n";
+                        m3u += udpxy+data[id]['ip']+':'+data[id]['port']+"\r\n";
                     } else {
                         s = '';
                         h = ' checked="checked"';
                     }
-                    let str = '<div style="margin:10px;float: left; width: 200px; height: 410px;"><form id="f' + index + '">';
-                    //str += '<div style="margin-left: 10px; height: 160px; margin-bottom: 12px;">';
+                    let str = '<div style="margin: 10px;float: left; width: 200px; height: 340px;"><form id="f' + index + '">';
                     str += '<div style="height: 166px;">';
                     if (data[id]['videoHeight'] !== 0) {
                         str += '<a target="_blank" href="img/' + id + '.jpg">';
@@ -103,61 +106,50 @@
                     }
 
                     let select = '<select style="width:200px;">';
-                    if(data[id]['tvg-name'] != ''){
-                        $(xmlDoc).find("programme[channel="+data[id]['tvg-name']+"]").each(function(){
-                            let start = ~~$(this).attr('start').substring(8,12);
-                            let stop = ~~$(this).attr('stop').substring(8,12);
-                            //console.log(start+'|'+stop);
+                    if (data[id]['tvg-name'] !== '') {
+                        $(xmlDoc).find("programme[channel=" + data[id]['tvg-name'] + "]").each(function () {
+                            let start = $(this).attr('start').substring(8, 12);
+                            let stop = $(this).attr('stop').substring(8, 12);
                             select += '<option';
-                                    if((hi >= start) && (hi < stop)){
-
-                                                select += ' selected';
-                                            }
-                            select += '>'+start.toString().substring(0,2)+':'+start.toString().substring(2,4)+' '+$(this).find('title').eq(0).text()+'</option>';
+                            if ((hi >= ~~start) && (hi < ~~stop)) {
+                                select += ' selected';
+                            }
+                            select += '>' + start.substring(0, 2) + ':' + start.substring(2, 4);
+                            select += ' ' + $(this).find('title').eq(0).text() + '</option>';
                         });
                     }
                     select += '</select>';
                     str += '</div>';
                     str += '<p><a href="' + udpxy + data[id]['ip'] + ':' + data[id]['port'] + '">';
-                    str += data[id]['ip'] + ':' + data[id]['port'] + '</a> [' + data[id]['videoHeight'] + '] ';
-                    str += '<a href="#">更新</a></p>';
-                    str += '<p><input style="width:192px;" name="title" type="text" value="' + data[id]['title'] + '" /></p>';
-                    str += '<p><input style="width:192px;" name="tvg-name" type="text" value="' + data[id]['tvg-name'] + '" /></p>';
-                    str += '<p>'+select+'</p>';
-                    str += '<p><input style="width:192px;" name="group-title" type="text" value="' + data[id]['group-title'] + '" /></p>';
-                    str += '<p><input style="width:192px;" name="sort" type="text" value="' + data[id]['sort'] + '" /></p>';
-                    str += '<p><input id="s_' + index + '" name="state" type="radio" value="1"' + s + ' /><label for="s_' + index + '">显示</label>';
-                    str += '<input id ="h_' + index + '" name="state" type="radio" value="0"' + h + ' /><label for="h_' + index + '">隐藏</label></p>';
-                    str += '<p style="padding-right: 26px;text-align: right;">';
-                    str += '<input name="ip" type="hidden" value="' + data[id]['ip'] + '">';
-                    str += '<input name="port" type="hidden" value="' + data[id]['port'] + '">';
-                    str += '<a href="javascript:void(0);" onclick="update(' + index + ', \'' + id + '\')" >保存</a></p>';
+                    str += data[id]['ip'] + ':' + data[id]['port'] + '</a> [' + data[id]['videoHeight'] + '] </p>';
+                    str += '<p><input style="width:192px;" name="title" type="text" value="' + data[id]['title'] + '" readonly/></p>';
+                    str += '<p><input style="width:192px;" name="tvg-name" type="text" value="' + data[id]['tvg-name'] + '" readonly/></p>';
+                    str += '<p>' + select + '</p>';
+                    str += '<p><input style="width:192px;" name="group-title" type="text" value="' + data[id]['group-title'] + '" readonly/></p>';
+                    str += '<p><input style="width:192px;" name="sort" type="text" value="' + data[id]['sort'] + '" readonly/></p>';
+                    str += '<p><input id="s_' + index + '" name="state" type="radio" value="1"' + s + ' disabled/><label for="s_' + index + '">显示</label>';
+                    str += '<input id ="h_' + index + '" name="state" type="radio" value="0"' + h + ' disabled/><label for="h_' + index + '">隐藏</label></p>';
                     str += '</form></div>';
                     $('#main').append(str);
-
-                    //let d = new Date(now);
-                    //console.log(d.getFullYear());
-                    
-                    //return false;
                 });
+                $('#m3u').html(m3u);
             });
         }
-
-        function update(index, id) {
-            let formData = new FormData(document.getElementById("f" + index));
-            let request = new XMLHttpRequest();
-            request.open('POST', 'iptv.php?id=' + id, false);
-            request.send(formData);
-            reload();
-        }
-    </script>
+        </script>
 </head>
 <body>
-<h1>天津联通IPTV截屏预览</h1>
+<h1>天津联通IPTV频道整理</h1>
+<h3>
+    该页为GitHub项目的演示:</br>
+    <a href="https://github.com/gabacai/tj-unicom-iptv">https://github.com/gabacai/tj-unicom-iptv</a></br>
+    EPG文件来自:</br>
+    <a href="https://epg.112114.xyz">https://epg.112114.xyz</a></br>
+    <!--本地epg下载(<a href="epg.xml">epg.xml</a>)-->
+</h3>
 <div id="header">
     <p>
-        <label for="udpxy">udpxy地址:</label>
-        <input id="udpxy" type="text" value="http://192.168.6.1:5002/udp/" size="30"/>
+        <label for="udpxy">udpxy:</label>
+        <input id="udpxy" type="text" value="" size="30"/>
     </p>
     <p>
         显示:
@@ -174,9 +166,13 @@
         <input id="c_height0" name="c_height" type="checkbox" value="0"/>
         <label for="c_height0">height=0</label>
     </p>
-    <p>
+       <div>
+        m3u: <textarea id="m3u" rows="6" cols="40"></textarea>
+    </div>
+    <p></p><p>
         <a href="javascript:void(0);" onclick="reload();">刷新</a>
     </p>
+
 </div>
 <div id="main"></div>
 </body>
