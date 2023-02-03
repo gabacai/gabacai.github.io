@@ -31,9 +31,8 @@
     <script type="application/javascript">
         let udpxy, state, videoHeight, xmlDoc;
         udpxy = 'http://192.168.6.1:5002/udp/';
-        $('#udpxy').val(localStorage.getItem('udpxy') === null ? udpxy :          localStorage.getItem('udpxy'));
         $(function () {
-            $('#udpxy').val(udpxy);
+            $('#udpxy').val(localStorage.getItem('udpxy') === null ? udpxy : localStorage.getItem('udpxy'));
             $.get('epg.xml?t=' + Date.now(), function (xml) {
                 xmlDoc = xml;
                 reload();
