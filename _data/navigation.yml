@@ -1,0 +1,17 @@
+main:
+  - title: "文章"
+    url: /posts/
+  - title: "文档"
+    url: /docs/
+  - title: "分类"
+    url: /categories/
+  - title: "标签"
+    url: /tags/
+  - title: "关于"
+    url: /about/
+
+docs:
+  - title: "文档首页"
+    url: /docs/
+  - title: "快速开始"
+    url: /docs/getting-started/
